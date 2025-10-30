@@ -7,8 +7,6 @@ import interview_routes from './routes/interview_routes.js';
 
 dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 5000;
-
 
 app.use(cors());
 app.use(express.json()); // permite recibir datos en JSON en el body de la request
@@ -21,6 +19,23 @@ app.get('/', (req, res) => {
     res.json({message: 'InterviewCoach AI API is running'});
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`)
-});
+// ------------------ Base de Datos ------------------
+import {sequelize_connection, ensure_database} from './database/conexion_mysql_db.js';
+
+const PORT = process.env.PORT || 5000; // Cambiado a puerto 5000 por defecto
+
+(
+    async() => {
+        try {
+            await ensure_database();
+            await sequelize_connection.sync();
+            console.log('Base de datos y tablas listas');
+
+            // Solo una llamada a listen, después de la inicialización de la BD
+            app.listen(PORT, () => {
+                console.log('Servidor corriendo en el puerto: ' + PORT);
+            });
+        } catch (error) {
+            console.error('Error al inicializar la BD: ', error);
+        }
+})();
