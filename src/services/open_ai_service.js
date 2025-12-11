@@ -1,14 +1,15 @@
-import axios from 'axios'; // libreria para hacer solicitudes a APIs externas
+import axios from 'axios';
+import { search_relevant_context } from './rag_service.js';
 
-/** JSDoc
- * 
- * @param {string} role - Rol del puesto (ej: "Backend Developer")
- * @param {string} level - Nivel del puesto (ej: "Junior")
- * @returns {string} - La pregunta generada por GPT
- */
+const CV_PATH = './src/data/Luciana_Altamirano_CV.pdf';
 
 export async function generate_question(role, level) {
   try {
+    const cv_experience = await search_relevant_context(
+      `¿Qué experiencia tiene en ${role}?`,
+      CV_PATH
+    );
+
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions', // ruta a la API de OpenAI que recibira la solicitud
       { // comienzo del cuerpo de la solicitud
@@ -20,7 +21,7 @@ export async function generate_question(role, level) {
           },
           {
             role: 'user', // configura la instrucción que queremos que ejecute (generar una pregunta)
-            content: `Genera una sola pregunta para una entrevista de ${role} nivel ${level}. No agregues explicaciones ni respuestas.`
+            content: `El candidato tiene esta experiencia: "${cv_experience}". Genera una sola pregunta para una entrevista de ${role} nivel ${level}. No agregues explicaciones ni respuestas.`
           },
         ],
       },
@@ -41,6 +42,11 @@ export async function generate_question(role, level) {
 
 export async function evaluate_answer(question, answer){
   try {
+    const cv_skills = await search_relevant_context(
+      '¿Qué habilidades técnicas tiene el candidato?',
+      CV_PATH
+    );
+
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
@@ -52,7 +58,7 @@ export async function evaluate_answer(question, answer){
           },
           {
             role: 'user',
-            content: `Pregunta: ${question}"\nRespuesta del candidato: "${answer}"\nEvalúa brevemente la respuesta indicando si es adecuada, qué puntos fuertes tiene y cómo podría mejorar."`,
+            content: `El candidato tiene estas habilidades según su CV: "${cv_skills}". Pregunta: "${question}"\nRespuesta del candidato: "${answer}"\nEvalúa brevemente la respuesta indicando si es adecuada, qué puntos fuertes tiene y cómo podría mejorar."`,
           },
         ],
       },

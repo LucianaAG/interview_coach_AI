@@ -13,11 +13,18 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@huggingface/inference": "^4.13.5",
+    "@langchain/community": "^0.2.28",
     "axios": "^1.13.1",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
+    "cosine-similarity": "^1.0.1",
+    "dotenv": "^16.4.5",
     "express": "^5.1.0",
+    "fs-extra": "^11.3.2",
+    "langchain": "^0.2.19",
     "mysql2": "^3.15.3",
+    "pdf-parse": "^2.4.5",
+    "pdf-parse-fork": "^1.2.0",
     "sequelize": "^6.37.7"
   },
   "devDependencies": {
