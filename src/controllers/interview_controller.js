@@ -1,43 +1,99 @@
-import {generate_question, evaluate_answer} from '../services/open_ai_service.js';
-import interview from '../models/interview.js';
-let last_question = '';
-let last_interview = null;
+// src/controllers/interview_controller.js
 
-// ------------ Controlador para obtener una pregunta de entrevista ------------
-export async function get_question(request, response) {
-    const { role, level } = request.body;
+import {
+  generateInterviewQuestions,
+  evaluateInterviewAnswer
+} from "../services/interview_service.js";
 
-    if (!role || !level) {
-        return response.status(400).json({ error: 'Debe proporcionar el rol y el nivel.' });
+import interview from "../models/interview.js";
+
+// ------------ controlador de generación de preguntas ------------
+
+export async function generateQuestionsController(req, res) {
+  try {
+    const { // recupera del cuerpo de la solicitud los parametros ingresados por el usuario
+      sessionId,
+      role,
+      level,
+      section,
+      amount_questions
+    } = req.body;
+
+    if (!sessionId) { // evalua que la session esté activa y haya cargado anteriormente el documento
+      return res.status(400).json({
+        error: "Debe existir una sesión activa con un documento cargado"
+      });
     }
-    last_question = await generate_question(role, level);
 
-    last_interview = await interview.create({
-        role,
-        level,
-        question: last_question
+    if (!role || !level || !section || !amount_questions) { // evalua que no falte ningun parametro necesario
+      return res.status(400).json({
+        error: "Faltan parámetros obligatorios"
+      });
+    }
+
+    const questions = await generateInterviewQuestions({ // genera una pregunta en base a los parametros del usuario
+      sessionId,
+      role,
+      level,
+      section,
+      amount_questions
     });
 
-    response.json({ question: last_question });
-};
+    const newInterview = await interview.create({ // se crea una nueva interview
+      session_id: sessionId,
+      role,
+      level,
+      section,
+      amount_questions,
+      questions
+    });
 
-export async function get_feedback(request, response){
-    const {question, answer} = request.body;
+    return res.status(200).json({ // devuelve el ID de la entrevista actual y la pregunta generada
+      interviewId: newInterview.id,
+      questions
+    });
 
-    if (!question) {
-        return response.status(400).json({error: 'No se ha generado una pregunta previa'});        
+  } catch (error) {
+    console.error("Error al generar preguntas:", error.message);
+
+    return res.status(500).json({
+      error: error.message
+    });
+  }
+}
+
+// ------------ controlador de feedback ------------
+
+export async function getFeedbackController(req, res) {
+  try {
+    const { interviewId, answer } = req.body; // recupera el ID de la interview actual y la respuesta del usuario
+
+    if (!interviewId) { 
+      return res.status(400).json({
+        error: "Debe proporcionar interviewId"
+      });
     }
 
     if (!answer) {
-        return response.status(400).json({error: 'Debe proporcionar la respuesta'})
+      return res.status(400).json({
+        error: "Debe proporcionar la respuesta del usuario"
+      });
     }
 
-    const feedback = await evaluate_answer(last_question, answer);
+    const feedback = await evaluateInterviewAnswer({ // genera feedback en base al ID de la entrevista actual y la respuesta del usuario
+      interviewId,
+      answer
+    });
 
-    await last_interview.update({
-        user_answer: answer,
-        ai_feedback: feedback,
-    })
+    return res.status(200).json({ // devuelve el feedback al usuario
+      feedback
+    });
 
-    response.json({feedback});
-};
+  } catch (error) {
+    console.error("Error al generar feedback:", error.message);
+
+    return res.status(500).json({
+      error: error.message
+    });
+  }
+}

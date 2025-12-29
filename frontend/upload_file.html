@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Interview Coach AI - Subir archivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+      <h1 class="text-2xl font-bold mb-4 text-center">
+        Subí tu archivo
+      </h1>
+
+      <form id="uploadForm" class="space-y-4">
+        <input
+          type="file"
+          id="doc"
+          accept="application/pdf"
+          class="w-full"
+          required
+        />
+
+        <button
+          type="submit"
+          class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+        >
+          Subir archivo
+        </button>
+      </form>
+
+      <p
+        id="message"
+        class="text-center mt-4 text-sm"
+      ></p>
+    </div>
+
+    <script src="./upload_file.js"></script>
+  </body>
+</html>

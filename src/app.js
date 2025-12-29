@@ -1,16 +1,23 @@
+import path from "path";
+import { fileURLToPath } from "url";
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import interview_routes from './routes/interview_routes.js';
+import upload_routes from "./routes/upload_routes.js";
 // import news_routes from './routes/news_routes.js';
 // import tips_routes from './routes/tips_routes.js';
 
 dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app = express();
 
 app.use(cors());
 app.use(express.json()); // permite recibir datos en JSON en el body de la request
+app.use(express.static(path.join(__dirname, "../frontend")));
 app.use('/api/interview', interview_routes);
+app.use("/api", upload_routes);
 // app.use('/api/news', news_routes);
 // app.use('/tips_routes', tips_routes);
 

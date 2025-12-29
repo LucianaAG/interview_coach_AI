@@ -1,44 +1,70 @@
-// src/services/hugging_face_service.js
 import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/hf";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
-import { extract_text } from './pdf_service.js';
+import { extract_text } from "./pdf_service.js";
 
-let vector_store = null; // Acá se almacenará el cv procesado
+const sessions = new Map(); // Guarda los datos de la session actual (sessionId, pdfPath, vectorStore)
+                            // permite tener un documento diferente por session y no recalcular embeddings por cada pregunta
 
-async function initialize_vector_store(pdf_path) { // Recibe un documento, lo divide, lo vectoriza y guarda en un espacio vectorial
-  if (vector_store) {
-    return vector_store;
-  }
-  
-  const cv_text = await extract_text(pdf_path); // Obtiene todo el contenido del documento
+export function setDocumentForSession(sessionId, pdfPath) {
+  // evalua que exista un documento cargado, si este existe, se genera un sessionId
+  // y a ese sessionId se le relaciona con un el path del documento, ademas del vectorStore
+    if (!sessionId || !pdfPath) {
+      throw new Error("El sessionId y el pdfPath son obligatorios");
+    }
 
-  const splitter = new RecursiveCharacterTextSplitter({ // Divide el contenido del doc en bloques de 500 caracteres (En forma de cadena, no tokens)
-    chunkSize: 500,                                     // Lo hace de forma recursiva
-    chunkOverlap: 50
-  });
-  const docs = await splitter.createDocuments([cv_text]); // Almacena el contenido dividido (Un array de cadenas)
-
-  const embeddings = new HuggingFaceInferenceEmbeddings({ // Define qué modelo de HF se usará para vectorizar el documento
-    apiKey: process.env.HF_TOKEN,
-    model: "sentence-transformers/all-MiniLM-L6-v2"
-  });
-
-  vector_store = await MemoryVectorStore.fromDocuments(docs, embeddings); // Vectoriza los caracteres divididos (embeddings, Ej: [[0.12, -0.87, 0.44, ...]])
-                                                                          // y los guarda en un espacio vectorial
-
-  return vector_store; // Devuelve el espacio vectorial
+    sessions.set(sessionId, {
+      pdfPath,
+      vectorStore: null,
+    });
 }
 
+async function initializeVectorStore(sessionId) {
+  // evalua si para la session actual ya existe un vectorStore y lo devuelve
+  // sino procede a extraer los datos del documento, divide el texto, vectoriza los chunks
+  // y guarda el embedding en un vectorStore y lo devuelve
+    const session = sessions.get(sessionId);
 
-export async function search_relevant_context(question, pdf_path, amount_chunks = 2) {
-  const store = await initialize_vector_store(pdf_path); // almacena el embedding devuelto
+    if (!session) {
+      throw new Error("No existe un CV cargado para esta sesión");
+    }
 
-  const results = await store.similaritySearch(question, amount_chunks); // Busca en el embedding similitudes con la pregunta
+    if (session.vectorStore) {
+      return session.vectorStore;
+    }
 
-  const context = results.map(doc => doc.pageContent).join('\n\n'); // Extrae las similitudes y arma un texto
-  
-  return context;
+    const cvText = await extract_text(session.pdfPath); // lee y extrae el contenido
+
+    const splitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 500,
+      chunkOverlap: 50,
+    });
+
+    const docs = await splitter.createDocuments([cvText]); // divide el contenido en chunks de 500 caracteres
+
+    const embeddings = new HuggingFaceInferenceEmbeddings({ // vectoriza los chunks (embedding)
+      apiKey: process.env.HF_TOKEN,
+      model: "sentence-transformers/all-MiniLM-L6-v2",
+    });
+
+    const vectorStore = await MemoryVectorStore.fromDocuments(docs, embeddings); // almacena el embedding generado en un vectorStore
+
+    session.vectorStore = vectorStore;
+    sessions.set(sessionId, session);
+
+    return vectorStore;
 }
 
+export async function getContextForSession(sessionId, query, amountChunks = 2) {
+  // recupera el vectorStore asociado a la session actual y busca por similitud 
+  // devolviendo los fragmentos mas cercanos a la query
+    if (!query) {
+      throw new Error("La query es obligatoria");
+    }
 
+    const vectorStore = await initializeVectorStore(sessionId);
+
+    const results = await vectorStore.similaritySearch(query, amountChunks);
+
+    return results.map((doc) => doc.pageContent).join("\n\n");
+}

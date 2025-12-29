@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Interview Coach AI - Entrevista</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded shadow-md w-full max-w-xl">
+      <h1 class="text-2xl font-bold mb-6 text-center">
+        Ingrese los parametros indicados
+      </h1>
+
+      <form id="interviewForm" class="space-y-4">
+        <input
+          id="role"
+          type="text"
+          placeholder="Rol (ej: Backend Developer)"
+          class="w-full border p-2 rounded"
+          required
+        />
+
+        <input
+          id="level"
+          type="text"
+          placeholder="Nivel (ej: Junior)"
+          class="w-full border p-2 rounded"
+          required
+        />
+
+        <input
+          id="section"
+          type="text"
+          placeholder="Sección del CV (ej: Experiencia laboral)"
+          class="w-full border p-2 rounded"
+          required
+        />
+
+        <input
+          id="amount"
+          type="number"
+          min="1"
+          max="10"
+          placeholder="Cantidad de preguntas"
+          class="w-full border p-2 rounded"
+          required
+        />
+
+        <button
+          type="submit"
+          class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
+        >
+          Generar preguntas
+        </button>
+      </form>
+
+      <div id="result" class="mt-6"></div>
+    </div>
+
+    <script src="./interview.js"></script>
+  </body>
+</html>
