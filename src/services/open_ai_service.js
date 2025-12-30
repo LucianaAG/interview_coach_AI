@@ -71,7 +71,7 @@ export async function evaluateAnswer({ context, question, answer }) {
             {
               role: "system",
               content:
-                "Sos un entrevistador experto en tecnología que evalúa respuestas de candidatos de forma objetiva y constructiva.",
+                "Sos un entrevistador técnico senior. Das feedback claro, breve y directo.",
             },
             {
               role: "user",

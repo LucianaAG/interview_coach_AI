@@ -2,6 +2,7 @@ import { HuggingFaceInferenceEmbeddings } from "@langchain/community/embeddings/
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { extract_text } from "./pdf_service.js";
+import fs from "fs";
 
 const sessions = new Map(); // Guarda los datos de la session actual (sessionId, pdfPath, vectorStore)
                             // permite tener un documento diferente por session y no recalcular embeddings por cada pregunta
@@ -19,6 +20,11 @@ export function setDocumentForSession(sessionId, pdfPath) {
     });
 }
 
+/* 🔹 AGREGADO: permite consultar si ya existe un documento para la sesión */
+export function getDocumentForSession(sessionId) {
+  return sessions.get(sessionId);
+}
+
 async function initializeVectorStore(sessionId) {
   // evalua si para la session actual ya existe un vectorStore y lo devuelve
   // sino procede a extraer los datos del documento, divide el texto, vectoriza los chunks
@@ -27,6 +33,12 @@ async function initializeVectorStore(sessionId) {
 
     if (!session) {
       throw new Error("No existe un CV cargado para esta sesión");
+    }
+
+    // 🔴 FIX CLAVE: el archivo puede no existir aunque la sesión sí
+    if (!fs.existsSync(session.pdfPath)) {
+      sessions.delete(sessionId);
+      throw new Error("El documento ya no existe. Volvé a subirlo.");
     }
 
     if (session.vectorStore) {
@@ -68,3 +80,5 @@ export async function getContextForSession(sessionId, query, amountChunks = 2) {
 
     return results.map((doc) => doc.pageContent).join("\n\n");
 }
+
+

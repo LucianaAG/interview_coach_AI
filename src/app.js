@@ -5,8 +5,6 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import interview_routes from './routes/interview_routes.js';
 import upload_routes from "./routes/upload_routes.js";
-// import news_routes from './routes/news_routes.js';
-// import tips_routes from './routes/tips_routes.js';
 
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
@@ -18,8 +16,6 @@ app.use(express.json()); // permite recibir datos en JSON en el body de la reque
 app.use(express.static(path.join(__dirname, "../frontend")));
 app.use('/api/interview', interview_routes);
 app.use("/api", upload_routes);
-// app.use('/api/news', news_routes);
-// app.use('/tips_routes', tips_routes);
 
 // rutas
 app.get('/', (req, res) => {
@@ -29,7 +25,7 @@ app.get('/', (req, res) => {
 // ------------------ Base de Datos ------------------
 import {sequelize_connection, ensure_database} from './database/conexion_mysql_db.js';
 
-const PORT = process.env.PORT || 5000; // Cambiado a puerto 5000 por defecto
+const PORT = process.env.PORT || 5000;
 
 (
     async() => {
@@ -38,7 +34,6 @@ const PORT = process.env.PORT || 5000; // Cambiado a puerto 5000 por defecto
             await sequelize_connection.sync();
             console.log('Base de datos y tablas listas');
 
-            // Solo una llamada a listen, después de la inicialización de la BD
             app.listen(PORT, () => {
                 console.log('Servidor corriendo en el puerto: ' + PORT);
             });
